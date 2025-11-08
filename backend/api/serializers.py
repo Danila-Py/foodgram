@@ -95,7 +95,7 @@ class SubscribeSerializer(CustomUserSerializer):
         user = self.context.get('request').user
         if user.is_authenticated:
             return Subscribe.objects.filter(
-                user=user, 
+                user=user,
                 author=obj
             ).exists()
         return False
@@ -135,7 +135,7 @@ class IngredientRecipeSerializer(serializers.ModelSerializer):
     id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
     name = serializers.CharField(source='ingredient.name', read_only=True)
     measurement_unit = serializers.CharField(
-        source='ingredient.measurement_unit', 
+        source='ingredient.measurement_unit',
         read_only=True
     )
 
