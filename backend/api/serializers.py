@@ -4,7 +4,6 @@ from drf_extra_fields.fields import Base64ImageField
 
 from rest_framework import serializers
 from rest_framework.fields import IntegerField, SerializerMethodField
-from rest_framework.serializers import SerializerMethodField
 
 from recipes.models import Ingredient, IngredientAmount, Recipe, Tag, Favorite
 from users.models import Subscribe
@@ -35,7 +34,7 @@ class CustomUserCreateSerializer(UserCreateSerializer):
 
 class CustomUserSerializer(UserSerializer):
     is_subscribed = SerializerMethodField(read_only=True)
-    avatar = serializers.SerializerMethodField()
+    avatar = SerializerMethodField()
 
     class Meta:
         model = User
@@ -71,10 +70,10 @@ class CustomUserSerializer(UserSerializer):
 
 
 class SubscribeSerializer(CustomUserSerializer):
-    is_subscribed = serializers.SerializerMethodField()
+    is_subscribed = SerializerMethodField()
     recipes_count = SerializerMethodField()
     recipes = SerializerMethodField()
-    avatar = serializers.SerializerMethodField()
+    avatar = SerializerMethodField()
 
     class Meta(CustomUserSerializer):
         model = User
