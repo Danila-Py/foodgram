@@ -5,7 +5,7 @@ from .models import Subscribe, User
 
 
 @admin.register(User)
-class UsersAdmin(UserAdmin):
+class CustomUsersAdmin(UserAdmin):
     list_display = (
         'username',
         'id',

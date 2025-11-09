@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db.models import Q
+from django.db.models import Exists, OuterRef, Value, BooleanField
 from django_filters.rest_framework import (
     FilterSet,
     BooleanFilter,
@@ -7,20 +8,14 @@ from django_filters.rest_framework import (
     NumberFilter,
     ModelMultipleChoiceFilter,
 )
-from recipes.models import Ingredient, Recipe, Tag
+
+from recipes.models import Ingredient, Recipe, Tag, ShoppingCart, Favorite
 
 User = get_user_model()
 
 
 class IngredientFilter(FilterSet):
-    name = CharFilter(method='filter_name')
-
-    def filter_name(self, queryset, value):
-        if not value:
-            return queryset
-        return queryset.filter(
-            Q(name__icontains=value) | Q(name__istartswith=value)
-        ).distinct()
+    name = CharFilter(lookup_expr='icontains')
 
     class Meta:
         model = Ingredient
@@ -54,3 +49,30 @@ class RecipeFilter(FilterSet):
     class Meta:
         model = Recipe
         fields = ['tags', 'author', 'is_favorited', 'is_in_shopping_cart']
+
+    @property
+    def qs(self):
+        queryset = super().qs
+        user = self.request.user
+
+        if user.is_authenticated:
+            queryset = queryset.annotate(
+                is_favorited=Exists(
+                    Favorite.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                ),
+                is_in_shopping_cart=Exists(
+                    ShoppingCart.objects.filter(
+                        user=user,
+                        recipe=OuterRef('pk')
+                    )
+                )
+            )
+        else:
+            queryset = queryset.annotate(
+                is_favorited=Value(False, output_field=BooleanField()),
+                is_in_shopping_cart=Value(False, output_field=BooleanField())
+            )
+        return queryset

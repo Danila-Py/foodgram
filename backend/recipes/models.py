@@ -1,3 +1,5 @@
+from django.utils import timezone
+
 from django.contrib.auth import get_user_model
 from django.core.validators import MinValueValidator, RegexValidator
 from django.db import models
@@ -63,7 +65,7 @@ class Recipe(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name='recipes',
-        null=True,
+        null=False,
         verbose_name='Автор рецепта',)
     name = models.CharField(
         max_length=200,
@@ -83,6 +85,7 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
+        related_name='recipes'
     )
     cooking_time = models.PositiveSmallIntegerField(
         validators=(
@@ -92,9 +95,13 @@ class Recipe(models.Model):
             ),
         ),
         verbose_name='Время приготовления')
+    pub_date = models.DateTimeField(
+        default=timezone.now,
+        verbose_name='Дата публикации',
+    )
 
     class Meta:
-        ordering = ['-id']
+        ordering = ['-pub_date']
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
 
@@ -110,6 +117,7 @@ class IngredientAmount(models.Model):
         Ingredient,
         on_delete=models.CASCADE,
         verbose_name='Ингридиент',
+        related_name='ingredient_amounts'
     )
     amount = models.PositiveSmallIntegerField(
         validators=(
@@ -122,7 +130,6 @@ class IngredientAmount(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
         verbose_name = 'Количество ингридиента'
         verbose_name_plural = 'Количество ингридиентов'
         constraints = [
@@ -138,6 +145,7 @@ class Favorite(models.Model):
         User,
         on_delete=models.CASCADE,
         verbose_name='Пользователь',
+        related_name='favorites'
     )
     recipe = models.ForeignKey(
         Recipe,
@@ -147,7 +155,6 @@ class Favorite(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранные'
         constraints = [
@@ -173,7 +180,6 @@ class ShoppingCart(models.Model):
     )
 
     class Meta:
-        ordering = ['-id']
         verbose_name = 'Корзина покупок'
         verbose_name_plural = 'В корзине покупок'
         constraints = [

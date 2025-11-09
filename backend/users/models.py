@@ -9,29 +9,28 @@ class User(AbstractUser):
         max_length=254,
         unique=True,
     )
-    first_name = models.CharField('first name', max_length=150)
+    first_name = models.CharField(verbose_name='first name', max_length=150)
 
-    last_name = models.CharField('last name', max_length=150)
+    last_name = models.CharField(verbose_name='last name', max_length=150)
 
     avatar = models.ImageField(
         upload_to='avatars/',
         blank=True,
-        null=True,
+        null=False,
         verbose_name='Аватар'
     )
 
-    def get_avatar_url(self):
-        if self.avatar and hasattr(self.avatar, 'url'):
-            return self.avatar.url
-        return None
-
     class Meta:
-        ordering = ['id']
         verbose_name = 'Пользователь'
         verbose_name_plural = 'Пользователи'
 
     def __str__(self) -> str:
         return self.username
+
+    def get_avatar_url(self):
+        if self.avatar and hasattr(self.avatar, 'url'):
+            return self.avatar.url
+        return None
 
 
 class Subscribe(models.Model):
