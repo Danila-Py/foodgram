@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
 from django.db.models import Exists, OuterRef, Value, BooleanField
 from django_filters.rest_framework import (
     FilterSet,

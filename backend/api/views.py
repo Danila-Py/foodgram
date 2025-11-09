@@ -1,7 +1,5 @@
-import base64
 from io import BytesIO
 
-from django.core.files.base import ContentFile
 from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from djoser.views import UserViewSet
@@ -303,7 +301,7 @@ class RecipeViewSet(ModelViewSet):
         today = timezone.now()
         shopping_list = (
             f'Список покупок для: {user.get_full_name() or user.username}\n\n'
-            f'Дата: {today:%Y-%m-%d}\n\n'
+            f'Дата: {today: %Y-%m-%d}\n\n'
         )
         shopping_list += '\n'.join([
             f'- {ingredient["ingredient__name"]} '
@@ -311,7 +309,7 @@ class RecipeViewSet(ModelViewSet):
             f' - {ingredient["total_amount"]}'
             for ingredient in ingredients
         ])
-        shopping_list += f'\n\nFoodgram ({today:%Y})'
+        shopping_list += f'\n\nFoodgram ({today: %Y})'
         buffer = BytesIO()
         buffer.write(shopping_list.encode('utf-8'))
         buffer.seek(0)
