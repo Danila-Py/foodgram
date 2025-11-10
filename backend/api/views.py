@@ -274,18 +274,11 @@ class RecipeViewSet(ModelViewSet):
 
     @shopping_cart.mapping.delete
     def remove_from_cart(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        cart_item = ShoppingCart.objects.filter(
+        cart_item = get_object_or_404(
+            ShoppingCart,
             user=request.user,
-            recipe=recipe
+            recipe_id=pk
         )
-
-        if not cart_item.exists():
-            return Response(
-                {'error': 'Рецепт не был добавлен в корзину.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         cart_item.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
