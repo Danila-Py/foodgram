@@ -38,7 +38,6 @@ from api.serializers import (
     SubscribeSerializer,
     CustomUserCreateSerializer,
     AvatarSerializer,
-    SubscribeDeleteSerializer,
 )
 
 User = get_user_model()
@@ -54,8 +53,7 @@ class CustomUserViewSet(UserViewSet):
             return [AllowAny()]
         elif self.action in ['retrieve', 'list']:
             return [AllowAny()]
-        else:
-            return [IsAuthenticated()]
+        return [IsAuthenticated()]
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -126,12 +124,6 @@ class CustomUserViewSet(UserViewSet):
         user = request.user
         author = get_object_or_404(User, id=id)
 
-        if user == author:
-            return Response(
-                {'error': 'Нельзя подписаться на самого себя'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
         if request.method == 'POST':
             serializer = SubscribeSerializer(
                 data={'user': user.id, 'author': author.id},
@@ -149,12 +141,15 @@ class CustomUserViewSet(UserViewSet):
             )
 
         elif request.method == 'DELETE':
-            serializer = SubscribeDeleteSerializer(
-                data={},
-                context={'request': request, 'author': author}
-            )
-            serializer.is_valid(raise_exception=True)
-            Subscribe.objects.filter(user=user, author=author).delete()
+            deleted_count, _ = Subscribe.objects.filter(
+                user=user,
+                author=author
+            ).delete()
+            if deleted_count == 0:
+                return Response(
+                    {'error': 'Вы не подписаны на этого автора'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(
@@ -179,15 +174,11 @@ class CustomUserViewSet(UserViewSet):
 
 class IngredientViewSet(ReadOnlyModelViewSet):
     serializer_class = IngredientSerializer
-    filter_backends = [filters.SearchFilter]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = IngredientFilter
 
     def get_queryset(self):
-        queryset = Ingredient.objects.all()
-        name = self.request.query_params.get('name')
-        if name:
-            queryset = queryset.filter(name__istartswith=name)
-        return queryset
+        return Ingredient.objects.all()
 
 
 class TagViewSet(ReadOnlyModelViewSet):
@@ -203,7 +194,12 @@ class RecipeViewSet(ModelViewSet):
     filterset_class = RecipeFilter
 
     def get_queryset(self):
-        return Recipe.objects.select_related('author').prefetch_related('tags')
+        return Recipe.objects.select_related(
+            'author'
+        ).prefetch_related(
+            'tags',
+            'ingredients',
+        )
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -251,15 +247,11 @@ class RecipeViewSet(ModelViewSet):
 
     @favorite.mapping.delete
     def remove_from_favorites(self, request, pk=None):
-        recipe = get_object_or_404(Recipe, pk=pk)
-        favorite = Favorite.objects.filter(user=request.user, recipe=recipe)
-
-        if not favorite.exists():
-            return Response(
-                {'error': 'Рецепт не был добавлен в избранное.'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-
+        favorite = get_object_or_404(
+            Favorite,
+            user=request.user,
+            recipe_id=pk
+        )
         favorite.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 

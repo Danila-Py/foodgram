@@ -96,7 +96,7 @@ class Recipe(models.Model):
         ),
         verbose_name='Время приготовления')
     pub_date = models.DateTimeField(
-        default=timezone.now,
+        auto_now_add=True,
         verbose_name='Дата публикации',
     )
 
