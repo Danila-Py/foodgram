@@ -301,7 +301,7 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
     def validate_cooking_time(self, value):
         if value <= 0:
             raise serializers.ValidationError(
-                "Время приготовления должно быть больше 0."
+                'Время приготовления должно быть больше 0.'
             )
         return value
 
@@ -324,12 +324,12 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         ingredients_ids = [item['id'].id for item in value]
         if len(ingredients_ids) != len(set(ingredients_ids)):
             raise serializers.ValidationError(
-                "Ингредиенты не должны повторяться."
+                'Ингредиенты не должны повторяться.'
             )
         for ingredient in value:
             if ingredient['amount'] <= 0:
                 raise serializers.ValidationError(
-                    "Количество ингредиента должно быть больше 0."
+                    'Количество ингредиента должно быть больше 0.'
                 )
         return value
 
@@ -353,13 +353,24 @@ class CreateRecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags', None)
         ingredients_data = validated_data.pop('ingredients', None)
         instance = super().update(instance, validated_data)
+        if tags_data is not None:
+            instance.tags.set(tags_data)
+    
         if ingredients_data is not None:
             instance.ingredient_amounts.all().delete()
-            self._add_tags_and_ingredients(
-                instance,
-                tags_data,
-                ingredients_data
-            )
+            ingredient_amounts = []
+            for ingredient_data in ingredients_data:
+                ingredient = ingredient_data['id']
+                amount = ingredient_data['amount']
+                ingredient_amounts.append(
+                    IngredientAmount(
+                        recipe=instance,
+                        ingredient=ingredient,
+                        amount=amount
+                    )
+                )
+            IngredientAmount.objects.bulk_create(ingredient_amounts)
+    
         return instance
 
     def _add_tags_and_ingredients(self, recipe, tags_data, ingredients_data):
@@ -400,7 +411,7 @@ class FavoriteSerializer(serializers.ModelSerializer):
     def validate_recipe(self, value):
         user = self.context['request'].user
         if Favorite.objects.filter(user=user, recipe=value).exists():
-            raise serializers.ValidationError("Рецепт уже в избранном.")
+            raise serializers.ValidationError('Рецепт уже в избранном.')
         return value
 
 
